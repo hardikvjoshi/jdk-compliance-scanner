@@ -11,7 +11,7 @@ from core.scanner.base import ScanResult
 class TestCloudScanner:
     """Test cases for CloudScanner routing"""
     
-    @patch('core.scanner.cloud_scanner.AWSScanner')
+    @patch('core.scanner.cloud.aws_scanner.AWSScanner')
     def test_cloud_scanner_aws_routing(self, mock_aws_scanner_class):
         """Test routing to AWS scanner"""
         mock_scanner = MagicMock()
@@ -28,7 +28,7 @@ class TestCloudScanner:
         assert scanner.scanner == mock_scanner
         assert scanner.provider == "aws"
     
-    @patch('core.scanner.cloud_scanner.AzureScanner')
+    @patch('core.scanner.cloud.azure_scanner.AzureScanner')
     def test_cloud_scanner_azure_routing(self, mock_azure_scanner_class):
         """Test routing to Azure scanner"""
         mock_scanner = MagicMock()
@@ -46,7 +46,7 @@ class TestCloudScanner:
         assert scanner.scanner == mock_scanner
         assert scanner.provider == "azure"
     
-    @patch('core.scanner.cloud_scanner.GCPScanner')
+    @patch('core.scanner.cloud.gcp_scanner.GCPScanner')
     def test_cloud_scanner_gcp_routing(self, mock_gcp_scanner_class):
         """Test routing to GCP scanner"""
         mock_scanner = MagicMock()
@@ -74,7 +74,7 @@ class TestCloudScanner:
         with pytest.raises(ValueError, match="Unsupported cloud provider"):
             CloudScanner(config)
     
-    @patch('core.scanner.cloud_scanner.AWSScanner', side_effect=ImportError("boto3 not available"))
+    @patch('core.scanner.cloud.aws_scanner.AWSScanner', side_effect=ImportError("boto3 not available"))
     def test_cloud_scanner_missing_aws_sdk(self, mock_aws_scanner_class):
         """Test AWS SDK missing error"""
         config = {
@@ -85,7 +85,7 @@ class TestCloudScanner:
         with pytest.raises(ValueError, match="AWS scanner not available"):
             CloudScanner(config)
     
-    @patch('core.scanner.cloud_scanner.AzureScanner', side_effect=ImportError("azure not available"))
+    @patch('core.scanner.cloud.azure_scanner.AzureScanner', side_effect=ImportError("azure not available"))
     def test_cloud_scanner_missing_azure_sdk(self, mock_azure_scanner_class):
         """Test Azure SDK missing error"""
         config = {
@@ -97,7 +97,7 @@ class TestCloudScanner:
         with pytest.raises(ValueError, match="Azure scanner not available"):
             CloudScanner(config)
     
-    @patch('core.scanner.cloud_scanner.GCPScanner', side_effect=ImportError("gcp not available"))
+    @patch('core.scanner.cloud.gcp_scanner.GCPScanner', side_effect=ImportError("gcp not available"))
     def test_cloud_scanner_missing_gcp_sdk(self, mock_gcp_scanner_class):
         """Test GCP SDK missing error"""
         config = {
@@ -109,7 +109,7 @@ class TestCloudScanner:
         with pytest.raises(ValueError, match="GCP scanner not available"):
             CloudScanner(config)
     
-    @patch('core.scanner.cloud_scanner.AWSScanner')
+    @patch('core.scanner.cloud.aws_scanner.AWSScanner')
     def test_cloud_scanner_delegate_connect(self, mock_aws_scanner_class):
         """Test method delegation - connect"""
         mock_scanner = MagicMock()
@@ -123,7 +123,7 @@ class TestCloudScanner:
         assert result is True
         mock_scanner.connect.assert_called_once()
     
-    @patch('core.scanner.cloud_scanner.AWSScanner')
+    @patch('core.scanner.cloud.aws_scanner.AWSScanner')
     def test_cloud_scanner_delegate_disconnect(self, mock_aws_scanner_class):
         """Test method delegation - disconnect"""
         mock_scanner = MagicMock()
@@ -137,7 +137,7 @@ class TestCloudScanner:
         mock_scanner.disconnect.assert_called_once()
         assert not scanner.connected
     
-    @patch('core.scanner.cloud_scanner.AWSScanner')
+    @patch('core.scanner.cloud.aws_scanner.AWSScanner')
     def test_cloud_scanner_delegate_execute_command(self, mock_aws_scanner_class):
         """Test method delegation - execute_command"""
         mock_scanner = MagicMock()
@@ -151,7 +151,7 @@ class TestCloudScanner:
         assert stdout == "output"
         mock_scanner.execute_command.assert_called_once_with("java -version")
     
-    @patch('core.scanner.cloud_scanner.AWSScanner')
+    @patch('core.scanner.cloud.aws_scanner.AWSScanner')
     def test_cloud_scanner_delegate_scan(self, mock_aws_scanner_class):
         """Test method delegation - scan"""
         mock_scanner = MagicMock()
@@ -167,7 +167,7 @@ class TestCloudScanner:
         assert result.jdk_version == "11.0.1"
         mock_scanner.scan.assert_called_once()
     
-    @patch('core.scanner.cloud_scanner.AWSScanner')
+    @patch('core.scanner.cloud.aws_scanner.AWSScanner')
     def test_cloud_scanner_connect_no_scanner(self, mock_aws_scanner_class):
         """Test connect when no scanner initialized"""
         mock_aws_scanner_class.return_value = None
@@ -179,7 +179,7 @@ class TestCloudScanner:
         
         assert result is False
     
-    @patch('core.scanner.cloud_scanner.AWSScanner')
+    @patch('core.scanner.cloud.aws_scanner.AWSScanner')
     def test_cloud_scanner_scan_no_scanner(self, mock_aws_scanner_class):
         """Test scan when no scanner initialized"""
         mock_aws_scanner_class.return_value = None

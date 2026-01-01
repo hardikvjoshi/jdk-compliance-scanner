@@ -253,8 +253,12 @@ def admin_client(db_session: Session, test_user: User) -> TestClient:
 def mock_boto3_client():
     """Mock boto3 client using moto"""
     try:
-        from moto import mock_ec2
-        return mock_ec2()
+        try:
+            from moto import mock_aws
+            return mock_aws()
+        except ImportError:
+            from moto.ec2 import mock_ec2
+            return mock_ec2()
     except ImportError:
         # If moto not available, return a simple mock
         return MagicMock()

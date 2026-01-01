@@ -6,7 +6,13 @@ from unittest.mock import Mock, MagicMock, patch
 
 from core.scanner.factory import ScannerFactory
 from core.scanner.base import BaseScanner
-from tests.fixtures.mock_scanner import MockScanner
+import sys
+import os
+# Add tests directory to path for imports
+tests_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if tests_dir not in sys.path:
+    sys.path.insert(0, tests_dir)
+from fixtures.mock_scanner import MockScanner
 
 
 class TestScannerFactory:
@@ -94,7 +100,7 @@ class TestScannerFactory:
         try:
             from core.scanner.cloud_scanner import CloudScanner
             ScannerFactory.register_scanner("cloud", CloudScanner)
-            with patch('core.scanner.cloud_scanner.AWSScanner') as mock_aws:
+            with patch('core.scanner.cloud.aws_scanner.AWSScanner') as mock_aws:
                 mock_scanner = MagicMock()
                 mock_aws.return_value = mock_scanner
                 config = {"provider": "aws", "instance_id": "i-123"}

@@ -200,9 +200,10 @@ class TestScanResultModel:
         """Test ScanResult with project_id (backward compatibility)"""
         from core.database.models import ScanJob, JobType, ScanJobStatus, User, Cluster
         
-        # Create cluster for project
+        # Create cluster for project (use unique name to avoid constraint violation)
+        import uuid
         cluster = Cluster(
-            cluster_name="test-cluster",
+            cluster_name=f"test-cluster-{uuid.uuid4().hex[:8]}",
             console_url="https://console.example.com"
         )
         db_session.add(cluster)

@@ -93,7 +93,7 @@ class ScannerFactory:
         return scanner_class(config)
     
     @classmethod
-    def get_available_types(cls) -> list[str]:
+    def get_available_types(cls):
         """Get list of available scanner types"""
         return list(cls._scanner_classes.keys())
     

@@ -14,7 +14,8 @@ class TestTargetsAPI:
     
     @pytest.fixture
     def client(self):
-        """Test client"""
+        """Test client without authentication"""
+        from fastapi.testclient import TestClient
         return TestClient(app)
     
     def test_list_targets_empty(self, authenticated_client, db_session):

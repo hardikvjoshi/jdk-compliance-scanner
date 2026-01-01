@@ -38,7 +38,7 @@ class TestAzureScanner:
             AzureScanner(config)
     
     @patch('core.scanner.cloud.azure_scanner.AZURE_AVAILABLE', True)
-    @patch('core.scanner.cloud.azure_scanner.ClientSecretCredential')
+    @patch('core.scanner.cloud.azure_scanner.ClientSecretCredential', create=True)
     @patch('core.scanner.cloud.azure_scanner.get_encryption_manager')
     def test_azure_scanner_get_azure_credentials_service_principal(self, mock_encrypt, mock_cred_class):
         """Test service principal auth"""
@@ -65,7 +65,7 @@ class TestAzureScanner:
         assert cred == mock_cred
     
     @patch('core.scanner.cloud.azure_scanner.AZURE_AVAILABLE', True)
-    @patch('core.scanner.cloud.azure_scanner.DefaultAzureCredential')
+    @patch('core.scanner.cloud.azure_scanner.DefaultAzureCredential', create=True)
     @patch('core.scanner.cloud.azure_scanner.get_encryption_manager')
     def test_azure_scanner_get_azure_credentials_default(self, mock_encrypt, mock_cred_class):
         """Test default credentials"""
@@ -84,7 +84,7 @@ class TestAzureScanner:
         assert cred == mock_cred
     
     @patch('core.scanner.cloud.azure_scanner.AZURE_AVAILABLE', True)
-    @patch('core.scanner.cloud.azure_scanner.NetworkManagementClient')
+    @patch('core.scanner.cloud.azure_scanner.NetworkManagementClient', create=True)
     @patch('core.scanner.cloud.azure_scanner.AzureScanner._get_azure_credentials')
     def test_azure_scanner_get_vm_ip(self, mock_get_cred, mock_client_class):
         """Test VM IP retrieval"""

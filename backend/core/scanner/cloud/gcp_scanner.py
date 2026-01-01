@@ -2,6 +2,7 @@
 GCP Scanner - Implementation for GCP Compute Engine VMs
 """
 import paramiko
+import json
 from typing import Dict, Any, Optional
 from io import StringIO
 
@@ -11,7 +12,6 @@ from core.database.encryption import get_encryption_manager
 try:
     from google.cloud import compute_v1
     from google.oauth2 import service_account
-    import json
     GCP_AVAILABLE = True
 except ImportError:
     GCP_AVAILABLE = False

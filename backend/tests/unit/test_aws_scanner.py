@@ -4,7 +4,14 @@ Unit tests for AWSScanner
 import pytest
 from unittest.mock import Mock, MagicMock, patch
 import boto3
-from moto import mock_ec2
+try:
+    from moto import mock_aws
+    mock_ec2 = mock_aws  # Use mock_aws for moto 5.x
+except ImportError:
+    try:
+        from moto.ec2 import mock_ec2
+    except ImportError:
+        from moto import mock_ec2
 
 from core.scanner.cloud.aws_scanner import AWSScanner
 from core.scanner.base import ScanResult

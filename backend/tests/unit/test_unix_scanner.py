@@ -2,7 +2,8 @@
 Unit tests for UnixScanner
 """
 import pytest
-from unittest.mock import Mock, MagicMock, patch, StringIO
+from unittest.mock import Mock, MagicMock, patch
+from io import StringIO
 import paramiko
 
 from core.scanner.unix_scanner import UnixScanner

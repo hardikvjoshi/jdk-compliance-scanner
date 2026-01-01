@@ -60,9 +60,9 @@ if __name__ == "__main__":
     print(f"Initializing database at: {settings.db_path}")
     
     try:
-        init_database(settings.db_path, settings.db_password or "")
-        init_default_admin()
-        print("Database initialized successfully!")
+    init_database(settings.db_path, settings.db_password or "")
+    init_default_admin()
+    print("Database initialized successfully!")
     except Exception as e:
         print(f"Error initializing database: {e}")
         import traceback

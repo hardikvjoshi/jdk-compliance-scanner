@@ -39,20 +39,20 @@ class TestGCPScanner:
             GCPScanner(config)
     
     @patch('core.scanner.cloud.gcp_scanner.GCP_AVAILABLE', True)
-    @patch('core.scanner.cloud.gcp_scanner.service_account.Credentials')
-    @patch('core.scanner.cloud.gcp_scanner.compute_v1.InstancesClient')
+    @patch('core.scanner.cloud.gcp_scanner.service_account', create=True)
+    @patch('core.scanner.cloud.gcp_scanner.compute_v1', create=True)
     @patch('core.scanner.cloud.gcp_scanner.get_encryption_manager')
     def test_gcp_scanner_get_gcp_client_with_service_account(self, mock_encrypt, 
-                                                            mock_client_class, mock_cred_class):
+                                                            mock_compute_v1, mock_service_account):
         """Test service account auth"""
         mock_manager = MagicMock()
         service_account_json = json.dumps({"type": "service_account", "project_id": "test"})
         mock_manager.decrypt.return_value = service_account_json
         mock_encrypt.return_value = mock_manager
         mock_cred = MagicMock()
-        mock_cred_class.from_service_account_info.return_value = mock_cred
+        mock_service_account.Credentials.from_service_account_info.return_value = mock_cred
         mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
+        mock_compute_v1.InstancesClient.return_value = mock_client
         
         config = {
             "project_id": "test-project",
@@ -65,15 +65,15 @@ class TestGCPScanner:
         scanner = GCPScanner(config)
         client = scanner._get_gcp_client()
         
-        mock_cred_class.from_service_account_info.assert_called_once()
+        mock_service_account.Credentials.from_service_account_info.assert_called_once()
         assert client == mock_client
     
     @patch('core.scanner.cloud.gcp_scanner.GCP_AVAILABLE', True)
-    @patch('core.scanner.cloud.gcp_scanner.compute_v1.InstancesClient')
-    def test_gcp_scanner_get_gcp_client_default(self, mock_client_class):
+    @patch('core.scanner.cloud.gcp_scanner.compute_v1', create=True)
+    def test_gcp_scanner_get_gcp_client_default(self, mock_compute_v1):
         """Test default credentials"""
         mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
+        mock_compute_v1.InstancesClient.return_value = mock_client
         
         config = {
             "project_id": "test-project",
@@ -83,7 +83,7 @@ class TestGCPScanner:
         scanner = GCPScanner(config)
         client = scanner._get_gcp_client()
         
-        mock_client_class.assert_called_once()
+        mock_compute_v1.InstancesClient.assert_called_once()
         assert client == mock_client
     
     @patch('core.scanner.cloud.gcp_scanner.GCP_AVAILABLE', True)

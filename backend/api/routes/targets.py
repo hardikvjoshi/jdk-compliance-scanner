@@ -2,8 +2,10 @@
 Targets API routes - For managing Unix/Cloud scan targets
 """
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from pydantic import BaseModel, Field
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import status as http_status
+from pydantic import BaseModel, Field, field_serializer
 from sqlalchemy.orm import Session
 import json
 
@@ -45,8 +47,12 @@ class TargetResponse(BaseModel):
     ip_address: Optional[str] = None
     tier: str
     status: str
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
+    
+    @field_serializer('created_at', 'updated_at')
+    def serialize_datetime(self, dt: datetime, _info) -> str:
+        return dt.isoformat() if dt else ""
     
     class Config:
         from_attributes = True
@@ -69,9 +75,12 @@ async def list_targets(
             query = query.filter(Target.deployment_type == dep_type)
         except ValueError:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid deployment_type: {deployment_type}"
             )
+    
+    if status:
+        query = query.filter(Target.status == status)
     if tier:
         query = query.filter(Target.tier == tier)
     if status:
@@ -81,7 +90,7 @@ async def list_targets(
     return targets
 
 
-@router.post("", response_model=TargetResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TargetResponse, status_code=http_status.HTTP_201_CREATED)
 async def create_target(
     target_data: TargetCreate,
     db: Session = Depends(get_db),
@@ -93,7 +102,7 @@ async def create_target(
         dep_type = DeploymentType(target_data.deployment_type)
     except ValueError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid deployment_type: {target_data.deployment_type}. Valid types: {[e.value for e in DeploymentType]}"
         )
     
@@ -101,7 +110,7 @@ async def create_target(
     valid_tiers = ["Dev", "UAT", "Production"]
     if target_data.tier not in valid_tiers:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=f"Tier must be one of: {', '.join(valid_tiers)}"
         )
     
@@ -140,7 +149,7 @@ async def get_target(
     target = db.query(Target).filter(Target.id == target_id).first()
     if not target:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Target not found"
         )
     return target
@@ -157,7 +166,7 @@ async def update_target(
     target = db.query(Target).filter(Target.id == target_id).first()
     if not target:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Target not found"
         )
     
@@ -174,7 +183,7 @@ async def update_target(
         valid_tiers = ["Dev", "UAT", "Production"]
         if target_data.tier not in valid_tiers:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail=f"Tier must be one of: {', '.join(valid_tiers)}"
             )
         target.tier = target_data.tier
@@ -186,7 +195,7 @@ async def update_target(
     return target
 
 
-@router.delete("/{target_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{target_id}", status_code=http_status.HTTP_204_NO_CONTENT)
 async def delete_target(
     target_id: int,
     db: Session = Depends(get_db),
@@ -196,7 +205,7 @@ async def delete_target(
     target = db.query(Target).filter(Target.id == target_id).first()
     if not target:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Target not found"
         )
     
