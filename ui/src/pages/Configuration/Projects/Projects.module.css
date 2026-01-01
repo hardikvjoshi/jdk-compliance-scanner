@@ -1,0 +1,81 @@
+.projects {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.loading,
+.error {
+  padding: var(--spacing-4);
+  text-align: center;
+  border-radius: var(--border-radius);
+}
+
+.error {
+  background-color: #fee2e2;
+  color: var(--color-error);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.empty {
+  padding: var(--spacing-8);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.projectCard {
+  padding: var(--spacing-5);
+}
+
+.projectHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-4);
+}
+
+.projectHeader h3 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  margin: 0;
+}
+
+.badges {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.projectDetails {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  color: var(--color-text-secondary);
+}
+
+.projectDetails a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.projectDetails a:hover {
+  text-decoration: underline;
+}
+
