@@ -377,6 +377,49 @@ Test dependencies are included in `requirements.txt`:
 - `moto` - AWS service mocking
 - `responses` - HTTP mocking
 
+## API Testing Script
+
+An interactive CLI script is provided to test all API endpoints:
+
+**Option 1: Using the wrapper script (recommended - ensures virtual environment)**
+```bash
+# From project root directory
+# Linux/Mac:
+./tests/run_test_api.sh
+
+# Windows:
+tests\run_test_api.bat
+```
+
+**Option 2: Manual execution (ensure .venv is activated)**
+```bash
+# From project root directory
+# Make sure virtual environment is activated first
+cd backend
+source .venv/bin/activate  # Linux/Mac
+# OR
+.venv\Scripts\activate  # Windows
+
+cd ..
+python tests/test_api.py
+```
+
+The wrapper scripts automatically:
+- Check for `.venv` virtual environment in `backend/.venv`
+- Create `.venv` if it doesn't exist
+- Activate the virtual environment
+- Install `requests` library if needed
+- Run the test script within the virtual environment
+
+The script:
+- Provides an interactive menu to select API endpoints
+- Prompts for required inputs
+- Makes API calls and displays responses
+- Saves all outputs to `logs/output_<date>.log`
+- Handles authentication (login required for most endpoints)
+
+**Note**: Make sure the server is running (`cd backend && python run.py`) before using the test script.
+
 ## License
 
 [Your License Here]
