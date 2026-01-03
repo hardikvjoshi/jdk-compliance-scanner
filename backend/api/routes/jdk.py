@@ -2,8 +2,9 @@
 JDK Versions management API routes
 """
 from typing import List, Optional
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 from sqlalchemy.orm import Session
 
 from core.database import get_db
@@ -32,8 +33,12 @@ class JDKVersionResponse(BaseModel):
     vendor: str
     compliance_status: str
     is_active: bool
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
+    
+    @field_serializer('created_at', 'updated_at')
+    def serialize_datetime(self, dt: datetime, _info) -> str:
+        return dt.isoformat() if dt else ""
     
     class Config:
         from_attributes = True

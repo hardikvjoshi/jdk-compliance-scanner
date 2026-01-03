@@ -4,7 +4,7 @@ Project/Namespace onboarding and management API routes
 from typing import List, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from pydantic import BaseModel, HttpUrl, Field
+from pydantic import BaseModel, HttpUrl, Field, field_serializer
 from sqlalchemy.orm import Session
 
 from core.database import get_db
@@ -60,9 +60,13 @@ class ProjectResponse(BaseModel):
     console_url: str
     retired: bool
     status: str
-    onboarded_at: str
-    created_at: str
-    updated_at: str
+    onboarded_at: datetime
+    created_at: datetime
+    updated_at: datetime
+    
+    @field_serializer('onboarded_at', 'created_at', 'updated_at')
+    def serialize_datetime(self, dt: datetime, _info) -> str:
+        return dt.isoformat() if dt else ""
     
     class Config:
         from_attributes = True
