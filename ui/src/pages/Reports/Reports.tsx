@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Button, Badge } from '../../components/common';
+import { Card, Button } from '../../components/common';
 import styles from './Reports.module.css';
 
 export const Reports: React.FC = () => {

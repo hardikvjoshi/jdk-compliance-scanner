@@ -11,15 +11,7 @@ const COMPLIANCE_STATUS_OPTIONS: SelectOption[] = [
   { value: 'CompliantStar', label: 'CompliantStar' },
 ];
 
-const MAJOR_VERSION_OPTIONS: SelectOption[] = [
-  { value: '8', label: '8' },
-  { value: '11', label: '11' },
-  { value: '17', label: '17' },
-  { value: '18', label: '18' },
-  { value: '19', label: '19' },
-  { value: '21', label: '21' },
-  { value: '22', label: '22' },
-];
+// MAJOR_VERSION_OPTIONS removed - using Input type="number" instead
 
 export const JDKVersions: React.FC = () => {
   const { user } = useAuthStore();
@@ -117,14 +109,16 @@ export const JDKVersions: React.FC = () => {
     }
   };
 
-  const handleUpdateComplianceStatus = async (version: JDKVersion, status: string) => {
-    try {
-      await jdkApi.updateComplianceStatus(version.id, status);
-      await loadVersions();
-    } catch (err: any) {
-      setError(err.detail || 'Failed to update compliance status');
-    }
-  };
+  // handleUpdateComplianceStatus - reserved for future use if compliance status needs to be updated separately
+  // Currently compliance status is updated via the edit modal
+  // const handleUpdateComplianceStatus = async (version: JDKVersion, status: string) => {
+  //   try {
+  //     await jdkApi.updateComplianceStatus(version.id, status);
+  //     await loadVersions();
+  //   } catch (err: any) {
+  //     setError(err.detail || 'Failed to update compliance status');
+  //   }
+  // };
 
   if (loading) {
     return <div className={styles.loading}>Loading JDK versions...</div>;

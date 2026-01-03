@@ -93,6 +93,35 @@ export interface JDKVersion {
   updated_at: string;
 }
 
+// Exemption types
+export interface Exemption {
+  id: number;
+  project_id: number;
+  application_name: string;
+  jdk_version_id: number;
+  exemption_reason: string;
+  start_date: string;
+  end_date: string | null;
+  exemption_status: 'Active' | 'Expired' | 'Revoked';
+  exemption_type: 'Temporary' | 'Permanent';
+  created_by: number;
+  created_at: string;
+  // Relationships (optional, populated by backend)
+  project?: Project;
+  jdk_version?: JDKVersion;
+  creator?: User;
+}
+
+export interface ExemptionCreate {
+  project_id: number;
+  application_name: string;
+  jdk_version_id: number;
+  exemption_reason: string;
+  start_date: string;
+  end_date?: string | null;
+  exemption_type: 'Temporary' | 'Permanent';
+}
+
 // Common types
 export interface ApiError {
   detail: string;

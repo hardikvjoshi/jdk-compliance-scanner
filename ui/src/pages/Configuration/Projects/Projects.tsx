@@ -9,7 +9,6 @@ import {
   Input,
   Select,
   SelectOption,
-  TextArea,
 } from '../../../components/common';
 import { useAuthStore } from '../../../store/authStore';
 import styles from './Projects.module.css';
@@ -63,7 +62,7 @@ export const Projects: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCredentialsModal, setShowCredentialsModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Note: Delete confirmation removed - using window.confirm instead
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   // Form states

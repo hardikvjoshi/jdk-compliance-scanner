@@ -1,126 +1,69 @@
 .exemptions {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-6);
+  gap: var(--spacing-4);
 }
 
 .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: var(--spacing-4);
 }
 
-.header h1 {
-  font-size: var(--font-size-3xl);
-  font-weight: var(--font-weight-bold);
+.header h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
-  margin: 0 0 var(--spacing-2) 0;
+  margin: 0 0 var(--spacing-1) 0;
 }
 
-.header p {
-  font-size: var(--font-size-base);
+.subtitle {
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin: 0;
 }
 
-.actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.formCard {
-  padding: var(--spacing-6);
-}
-
-.formCard h2 {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  margin: 0 0 var(--spacing-4) 0;
-}
-
-.formRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-4);
-  margin-bottom: var(--spacing-4);
-}
-
-.formGroup {
-  display: flex;
-  flex-direction: column;
-}
-
-.formGroup label {
-  margin-bottom: var(--spacing-2);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-}
-
-.formGroup input,
-.formGroup select,
-.formGroup textarea {
-  padding: var(--spacing-3);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-base);
-  font-family: var(--font-family);
-}
-
-.formGroup textarea {
-  resize: vertical;
-}
-
-.formActions {
-  display: flex;
-  gap: var(--spacing-3);
-  margin-top: var(--spacing-6);
-}
-
-.exemptionsList {
-  padding: var(--spacing-6);
-}
-
-.exemptionsList h2 {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  margin: 0 0 var(--spacing-4) 0;
-}
-
-.list {
-  min-height: 200px;
-}
-
-.emptyState {
-  text-align: center;
+.loading {
   padding: var(--spacing-8);
+  text-align: center;
   color: var(--color-text-secondary);
 }
 
-.note {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-tertiary);
-  margin-top: var(--spacing-2);
+.error {
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: #fee2e2;
+  border: var(--border-width) solid var(--color-error);
+  border-radius: var(--border-radius);
+  color: var(--color-error);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.statsCard {
-  padding: var(--spacing-6);
-}
-
-.statsCard h2 {
+.errorClose {
+  background: none;
+  border: none;
+  color: var(--color-error);
   font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  margin: 0 0 var(--spacing-4) 0;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--spacing-4);
 }
 
-.stat {
-  text-align: center;
+.statCard {
   padding: var(--spacing-4);
-  background-color: var(--color-bg-secondary);
-  border-radius: var(--border-radius);
+  text-align: center;
 }
 
 .statValue {
@@ -135,3 +78,80 @@
   color: var(--color-text-secondary);
 }
 
+.filtersCard {
+  padding: var(--spacing-4);
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: var(--spacing-3);
+  align-items: end;
+}
+
+@media (max-width: 1200px) {
+  .filters {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tableElement {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--color-bg-primary);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.tableElement thead {
+  background-color: var(--color-bg-secondary);
+}
+
+.tableElement th {
+  padding: var(--spacing-3) var(--spacing-4);
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  border-bottom: var(--border-width) solid var(--color-border);
+  white-space: nowrap;
+}
+
+.tableElement td {
+  padding: var(--spacing-3) var(--spacing-4);
+  border-bottom: var(--border-width) solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.tableElement tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tableElement tbody tr:hover {
+  background-color: var(--color-bg-secondary);
+}
+
+.reasonCell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  padding: var(--spacing-8);
+  text-align: center;
+  color: var(--color-text-secondary);
+}

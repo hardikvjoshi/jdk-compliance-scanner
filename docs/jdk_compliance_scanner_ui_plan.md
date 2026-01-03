@@ -42,11 +42,13 @@ This UI plan is verified against the backend implementation. The following APIs 
 
 **Pending APIs** (Not yet implemented in backend):
 - Scans: `/api/scans/*` (trigger, list, results)
-- Exemptions: `/api/exemptions/*` (CRUD, export/import)
+- Exemptions: `/api/exemptions/*` (CRUD partially implemented - list/create/revoke implemented in UI, export/import pending)
 - Reports: `/api/reports/*` (generate, schedule, download)
 - Dashboard: `/api/dashboard/stats` (aggregate statistics)
 - Users: `/api/users/*` (user management)
 - Configurations: `/api/configurations/*` (system settings)
+
+**Note**: Exemption creation UI is implemented and ready for backend API integration. The UI expects the backend API to follow the structure defined in the implementation details.
 
 **Field Naming Convention**: Backend uses **snake_case** for all API field names (e.g., `tech_read_token`, `cluster_id`). UI must use snake_case when sending data to the API.
 
@@ -747,18 +749,61 @@ The UI follows **DRY (Don't Repeat Yourself)**, **KISS (Keep It Simple, Stupid)*
 - **Export Exemptions**: CSV/JSON/PDF
 
 **API Mappings**:
-- `GET /api/exemptions` - List exemptions with filters and sorting
-- `POST /api/exemptions` - Create exemption
+- `GET /api/exemptions` - List exemptions with filters (project_id, application_name, jdk_version_id, exemption_status, exemption_type)
+- `POST /api/exemptions` - Create exemption (Administrator only)
 - `GET /api/exemptions/{id}` - Get exemption details
-- `GET /api/exemptions/export` - Export exemptions (format: csv/json/pdf)
-- `POST /api/exemptions/import` - Import exemptions from CSV/JSON
+- `POST /api/exemptions/{id}/revoke` - Revoke exemption (Administrator only)
+- `GET /api/exemptions/export` - Export exemptions (format: csv/json/pdf) - to be created
+- `POST /api/exemptions/import` - Import exemptions from CSV/JSON - to be created
 
 **Features**:
-- Advanced filtering and searching
-- Bulk import/export
-- Exemption expiration warnings
-- Quick create from scan results
-- Exemption statistics
+- CRUD operations for exemptions (Create, List, View, Revoke)
+- Advanced filtering and searching (project, status, type, application name)
+- Exemption expiration warnings (expiring within 30 days)
+- Exemption statistics (active, temporary, permanent, expiring soon)
+- Role-based access control (Administrator only for create/revoke)
+- Immutable exemptions (cannot edit after creation, only revoke)
+
+**Implementation Details**:
+
+1. **List View**:
+   - Table layout with columns: Project, Application, JDK Version, Type, Start Date, End Date, Status, Reason, Actions
+   - Filter dropdowns for: project_id, exemption_status, exemption_type
+   - Search input for application/project name filtering (client-side)
+   - Status badges with color coding (Active=success, Expired=warning, Revoked=neutral)
+   - Type badges (Permanent=info, Temporary=neutral)
+   - Revoke action button (Administrator only, for Active exemptions only)
+
+2. **Create Exemption Modal**:
+   - project_id (Select dropdown, required, populated from projectsApi.list() - active projects only)
+   - application_name (Input, required, placeholder: "e.g., my-app-service")
+   - jdk_version_id (Select dropdown, required, populated from jdkApi.list() - active versions only, format: "JDK X (Vendor)")
+   - exemption_type (Select dropdown, required, options: Temporary, Permanent)
+   - start_date (Input type="date", required, default: today)
+   - end_date (Input type="date", required if Temporary, hidden if Permanent, min: start_date)
+   - exemption_reason (TextArea, required, rows: 4, placeholder: "Explain why this exemption is needed...")
+   - Form validation:
+     - All required fields must be filled
+     - End date required for Temporary exemptions
+     - End date must be after start date
+   - Create via POST /api/exemptions
+
+3. **Revoke Exemption**:
+   - Confirmation modal before revoking
+   - Only available for Active exemptions
+   - Revoke via POST /api/exemptions/{id}/revoke
+   - Administrator only
+
+4. **Statistics Cards**:
+   - Active Exemptions count
+   - Temporary count
+   - Permanent count
+   - Expiring Soon count (temporary exemptions expiring within 30 days)
+
+5. **Components Used**:
+   - Modal, Input, Select, TextArea, Button, Badge, Card
+   - Form validation with date validation
+   - Conditional rendering for Temporary vs Permanent exemptions
 
 ---
 
