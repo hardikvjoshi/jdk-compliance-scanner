@@ -11,6 +11,24 @@ A clean, professional, responsive web-based user interface for the JDK Complianc
 
 The design emphasizes simplicity, clarity, and consistency following DRY, KISS, and MISS principles. The interface uses a custom design system with solid colors (no gradients), clean typography, and reusable components for a professional, enterprise-grade appearance.
 
+### Data Model Relationships
+
+**Fabric Structure (OpenShift/Kubernetes)**:
+- **Cluster** → **Projects** → **Deployments** → **Pods**
+- Projects belong to Clusters (cluster_id foreign key)
+- Pods are discovered and scanned through Projects (not managed as separate Targets)
+
+**Standalone Targets**:
+- **Unix Targets**: Standalone targets with hostname and credentials (username/password)
+- **Windows Targets**: Standalone targets with hostname and credentials (username/password)
+- **Cloud Targets**: Placeholder (not implemented in UI)
+
+**Key Points**:
+- Projects are only for OpenShift/Kubernetes (fabric structure)
+- Targets are only for Unix and Windows (standalone, no project/cluster relationship)
+- Cluster data (cluster_name, console_url, api_url) comes from Cluster table
+- Projects inherit cluster_name and console_url from selected Cluster (auto-populated)
+
 ### Backend API Alignment
 
 This UI plan is verified against the backend implementation. The following APIs are implemented and ready for UI integration:
@@ -260,7 +278,9 @@ The UI follows **DRY (Don't Repeat Yourself)**, **KISS (Keep It Simple, Stupid)*
 
 #### 4.2 Projects Onboarding Page (`/configuration/projects`)
 
-**Purpose**: Onboard and manage projects/namespaces
+**Purpose**: Onboard and manage OpenShift projects/namespaces
+
+**Relationship**: Projects belong to Clusters (Fabric structure: Cluster → Projects → Deployments → Pods)
 
 **Components**:
 - **Projects List Table**:
@@ -276,9 +296,10 @@ The UI follows **DRY (Don't Repeat Yourself)**, **KISS (Keep It Simple, Stupid)*
     - tribe (text, required)
     - tier (radio/dropdown, required) - Dev, UAT, Production
     - retired (checkbox, default: false)
-  - **Section 2: URLs**
-    - console_url (text, required, URL validation)
-    - cluster_name (text, required, auto-populated from cluster selection)
+  - **Section 2: URLs** (Auto-populated from Cluster selection)
+    - console_url (read-only display, auto-populated from selected cluster)
+    - cluster_name (read-only display, auto-populated from selected cluster)
+    - These fields are automatically populated when cluster is selected in Section 1
   - **Section 3: Credentials** (masked inputs)
     - tech_read_token (password input, required) - API field name: snake_case
     - tech_edit_credentials (password input, required) - API field name: snake_case
@@ -305,10 +326,62 @@ The UI follows **DRY (Don't Repeat Yourself)**, **KISS (Keep It Simple, Stupid)*
 - Multi-step form for onboarding (3 sections)
 - Real-time field validation
 - Password/token masking with show/hide toggle
-- Connection test before saving
+- Connection test before saving (future: API endpoint to be added)
 - Filterable, sortable table
 - Bulk operations (retire multiple projects)
 - Export projects list (CSV/Excel)
+
+**Implementation Details**:
+
+1. **List View**:
+   - Table layout with columns: Project Name, Cluster, Technology, Tribe, Tier, Status, Retired, Actions
+   - Filter dropdowns for: cluster_id, technology, tier, retired status, status
+   - Search input for project name filtering (client-side or API)
+   - Role-based action buttons (Edit, Update Credentials, Retire/Activate) - Administrator only
+   - Status badges with color coding (Active/Retired)
+
+2. **Create Project Modal** (Multi-step form):
+   - **Step 1: Basic Information**:
+     - project_name (Input, required)
+     - cluster_id (Select dropdown, required, populated from clustersApi.list())
+     - technology (Select dropdown, required, options: Java, Python, Node, Go, Mixed)
+     - tribe (Input, required)
+     - tier (Select dropdown, required, options: Dev, UAT, Production)
+     - retired (Checkbox, default: false)
+   - **Step 2: URLs** (Auto-populated from Cluster):
+     - console_url (Read-only display, auto-populated from selected cluster's console_url)
+     - cluster_name (Read-only display, auto-populated from selected cluster's cluster_name)
+     - Note: These fields are automatically populated when cluster is selected in Step 1
+     - User can view but cannot edit these fields (they come from cluster data)
+   - **Step 3: Credentials**:
+     - tech_read_token (Input type="password", required, show/hide toggle)
+     - tech_edit_credentials (Input type="password", required, show/hide toggle)
+     - wrapper_cluster_token (Input type="password", required, show/hide toggle)
+   - Navigation: Previous/Next buttons, Submit on final step
+   - Form validation per step before proceeding
+   - Error handling and display
+
+3. **Edit Project Modal**:
+   - Same fields as Step 1 (credentials and URLs excluded)
+   - Pre-populated with existing project data
+   - Note: cluster_name and console_url are not editable (they come from cluster)
+   - Update via PUT /api/projects/{id}
+
+4. **Update Credentials Modal**:
+   - Separate modal for updating credentials only
+   - Fields: tech_read_token, tech_edit_credentials, wrapper_cluster_token
+   - All fields required
+   - Update via PUT /api/projects/{id}/credentials
+
+5. **Actions**:
+   - Retire: Soft delete via DELETE /api/projects/{id} (sets retired=true, status=Retired)
+   - Activate: POST /api/projects/{id}/activate (sets retired=false, status=Active)
+   - Validation: GET /api/projects/{id}/validation (display validation results)
+
+6. **Components Used**:
+   - Modal, Input, Select, Button, Badge, Card
+   - Multi-step form state management
+   - Form validation with React Hook Form (recommended) or manual validation
 
 ---
 
@@ -378,7 +451,13 @@ The UI follows **DRY (Don't Repeat Yourself)**, **KISS (Keep It Simple, Stupid)*
 
 #### 4.5 Targets Management Page (`/configuration/targets`)
 
-**Purpose**: Manage Unix/Cloud scan targets (non-OpenShift targets)
+**Purpose**: Manage standalone Unix and Windows scan targets
+
+**Relationship**: 
+- Targets are standalone entities (NOT related to Projects or Clusters)
+- Only Unix and Windows deployment types are supported in UI
+- Cloud targets are placeholder (no UI implementation)
+- OpenShift pods are handled through Projects (not managed as separate Targets)
 
 **Components**:
 - **Targets List Table**:
@@ -387,14 +466,14 @@ The UI follows **DRY (Don't Repeat Yourself)**, **KISS (Keep It Simple, Stupid)*
   - Search by name
   - Sortable columns
 - **Create Target Modal/Form**:
-  - name (text, required)
-  - deployment_type (dropdown, required) - Unix, Cloud, etc.
-  - hostname (text, optional)
+  - name (text, required) - Target name/hostname
+  - deployment_type (dropdown, required) - Options: Unix, Windows (Cloud is placeholder, not available in UI)
+  - hostname (text, required for Unix/Windows)
   - ip_address (text, optional)
-  - connection_config (JSON object, required) - Encrypted credentials/keys
-  - project_id (dropdown, optional) - For associated OpenShift project
-  - cluster_id (dropdown, optional) - For associated cluster
+  - connection_config (JSON object, required) - Contains username and password for Unix/Windows
+    - Format: `{"username": "user", "password": "pass"}` for Unix/Windows
   - tier (dropdown, required) - Dev, UAT, Production
+  - Note: project_id and cluster_id are NOT applicable for Unix/Windows targets (standalone entities)
   - Form validation for all required fields
 - **Edit Target Modal**: Update target information
 - **Delete Target Button**: With confirmation dialog
@@ -407,16 +486,63 @@ The UI follows **DRY (Don't Repeat Yourself)**, **KISS (Keep It Simple, Stupid)*
 - `DELETE /api/targets/{id}` - Delete target (Administrator only)
 
 **Features**:
-- CRUD operations for scan targets
-- Support for Unix and Cloud deployment types
-- Connection configuration encryption (handled by backend)
+- CRUD operations for Unix and Windows targets only
+- Standalone targets (no relationship to Projects or Clusters)
+- Connection configuration with username/password (encrypted by backend)
 - Role-based access control (Administrator only for create/update/delete)
 - Target status indicators (Active/Inactive)
+- Cloud targets are placeholder (not shown in UI, no creation support)
 
 **Design**:
 - Simple, clean table layout
 - Connection config displayed as encrypted indicator (never shown in plain text)
 - Status badges with solid colors
+
+**Implementation Details**:
+
+1. **List View**:
+   - Table layout with columns: Name, Deployment Type, Hostname/IP, Tier, Status, Actions
+   - Filter dropdowns for: deployment_type, tier, status
+   - Search input for name filtering
+   - Role-based action buttons (Edit, Delete) - Administrator only
+   - Status badges (Active/Inactive)
+
+2. **Create Target Modal**:
+   - name (Input, required) - Target name/hostname
+   - deployment_type (Select dropdown, required, options: Unix, Windows only)
+     - Cloud is placeholder (not available in UI)
+     - OpenShift pods are managed through Projects (not as Targets)
+   - hostname (Input, required for Unix/Windows)
+   - ip_address (Input type="text", optional, IP validation)
+   - tier (Select dropdown, required, options: Dev, UAT, Production)
+   - connection_config (JSON TextArea, required):
+     - Format: `{"username": "user", "password": "pass"}` for Unix/Windows
+     - Additional fields optional: port, ssh_key (for Unix), domain (for Windows)
+   - Note: project_id and cluster_id are NOT shown (not applicable for standalone Unix/Windows targets)
+   - Form validation for required fields
+   - JSON validation for connection_config
+
+3. **Edit Target Modal**:
+   - Same fields as create modal
+   - Pre-populated with existing target data
+   - Note: connection_config is encrypted in backend - user must re-enter if updating
+   - Update via PUT /api/targets/{id}
+
+4. **Delete Target**:
+   - Confirmation modal/dialog before deletion
+   - Delete via DELETE /api/targets/{id}
+   - Administrator only
+
+5. **Connection Config Handling**:
+   - Display: Show "Encrypted" indicator, never show actual values
+   - Input: Allow JSON textarea input or provide structured form fields
+   - Validation: Ensure valid JSON structure
+   - Encryption: Handled by backend automatically
+
+6. **Components Used**:
+   - Modal, Input, Select, TextArea, Button, Badge, Card
+   - JSON editor or structured form based on deployment_type
+   - Form validation
 
 ---
 

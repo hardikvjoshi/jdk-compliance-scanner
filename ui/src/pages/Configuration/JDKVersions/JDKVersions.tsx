@@ -1,14 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { jdkApi } from '../../../services/api';
 import { JDKVersion } from '../../../types';
-import { Card, Button, Badge } from '../../../components/common';
+import { Card, Button, Badge, Modal, Input, Select, SelectOption } from '../../../components/common';
+import { useAuthStore } from '../../../store/authStore';
 import styles from './JDKVersions.module.css';
 
+const COMPLIANCE_STATUS_OPTIONS: SelectOption[] = [
+  { value: 'Compliant', label: 'Compliant' },
+  { value: 'Non-Compliant', label: 'Non-Compliant' },
+  { value: 'CompliantStar', label: 'CompliantStar' },
+];
+
+const MAJOR_VERSION_OPTIONS: SelectOption[] = [
+  { value: '8', label: '8' },
+  { value: '11', label: '11' },
+  { value: '17', label: '17' },
+  { value: '18', label: '18' },
+  { value: '19', label: '19' },
+  { value: '21', label: '21' },
+  { value: '22', label: '22' },
+];
+
 export const JDKVersions: React.FC = () => {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'Administrator';
+  
   const [versions, setVersions] = useState<JDKVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingVersion, setEditingVersion] = useState<JDKVersion | null>(null);
   const [formData, setFormData] = useState({
     major_version: '',
     vendor: '',
@@ -33,31 +54,75 @@ export const JDKVersions: React.FC = () => {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      major_version: '',
+      vendor: '',
+      compliance_status: 'Compliant',
+      is_active: true,
+    });
+    setEditingVersion(null);
+  };
+
+  const handleCreate = () => {
+    resetForm();
+    setShowCreateModal(true);
+  };
+
+  const handleEdit = (version: JDKVersion) => {
+    setFormData({
+      major_version: version.major_version.toString(),
+      vendor: version.vendor,
+      compliance_status: version.compliance_status,
+      is_active: version.is_active,
+    });
+    setEditingVersion(version);
+    setShowCreateModal(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setError(null);
-      await jdkApi.create({
-        major_version: parseInt(formData.major_version),
-        vendor: formData.vendor,
-        compliance_status: formData.compliance_status,
-        is_active: formData.is_active,
-      });
-      setShowForm(false);
-      setFormData({ major_version: '', vendor: '', compliance_status: 'Compliant', is_active: true });
+      if (editingVersion) {
+        await jdkApi.update(editingVersion.id, {
+          vendor: formData.vendor,
+          compliance_status: formData.compliance_status,
+          is_active: formData.is_active,
+        });
+      } else {
+        await jdkApi.create({
+          major_version: parseInt(formData.major_version),
+          vendor: formData.vendor,
+          compliance_status: formData.compliance_status,
+          is_active: formData.is_active,
+        });
+      }
+      setShowCreateModal(false);
+      resetForm();
       await loadVersions();
     } catch (err: any) {
-      setError(err.detail || 'Failed to create JDK version');
+      setError(err.detail || `Failed to ${editingVersion ? 'update' : 'create'} JDK version`);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this JDK version?')) return;
+  const handleToggleActive = async (version: JDKVersion) => {
     try {
-      // Note: Delete endpoint may not exist, handle gracefully
+      await jdkApi.update(version.id, {
+        is_active: !version.is_active,
+      });
       await loadVersions();
     } catch (err: any) {
-      setError(err.detail || 'Failed to delete JDK version');
+      setError(err.detail || 'Failed to update JDK version');
+    }
+  };
+
+  const handleUpdateComplianceStatus = async (version: JDKVersion, status: string) => {
+    try {
+      await jdkApi.updateComplianceStatus(version.id, status);
+      await loadVersions();
+    } catch (err: any) {
+      setError(err.detail || 'Failed to update compliance status');
     }
   };
 
@@ -65,104 +130,159 @@ export const JDKVersions: React.FC = () => {
     return <div className={styles.loading}>Loading JDK versions...</div>;
   }
 
+  const getComplianceBadgeVariant = (status: string) => {
+    if (status === 'Compliant' || status === 'CompliantStar') return 'success';
+    if (status === 'Non-Compliant') return 'error';
+    return 'neutral';
+  };
+
   return (
     <div className={styles.jdkVersions}>
       <div className={styles.header}>
-        <h2>JDK Versions</h2>
-        <Button onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancel' : '+ Add JDK Version'}
-        </Button>
+        <div>
+          <h2>JDK Versions</h2>
+          <p className={styles.subtitle}>Manage JDK versions and their compliance status</p>
+        </div>
+        {isAdmin && (
+          <Button onClick={handleCreate}>+ Add JDK Version</Button>
+        )}
       </div>
 
-      {error && <div className={styles.error}>{error}</div>}
+      {error && (
+        <div className={styles.error}>
+          {error}
+          <button onClick={() => setError(null)} className={styles.errorClose}>×</button>
+        </div>
+      )}
 
-      {showForm && (
-        <Card className={styles.formCard}>
-          <h3>Create New JDK Version</h3>
-          <form onSubmit={handleSubmit}>
-            <div className={styles.formGroup}>
-              <label>Major Version *</label>
-              <input
-                type="number"
-                value={formData.major_version}
-                onChange={(e) => setFormData({ ...formData, major_version: e.target.value })}
-                required
-                min="1"
-              />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Vendor *</label>
-              <input
-                type="text"
-                value={formData.vendor}
-                onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
-                required
-                placeholder="e.g., Oracle, Zulu, Amazon"
-              />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Compliance Status *</label>
-              <select
-                value={formData.compliance_status}
-                onChange={(e) => setFormData({ ...formData, compliance_status: e.target.value as any })}
-                required
-              >
-                <option value="Compliant">Compliant</option>
-                <option value="Non-Compliant">Non-Compliant</option>
-                <option value="CompliantStar">CompliantStar</option>
-              </select>
-            </div>
-            <div className={styles.formGroup}>
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          resetForm();
+        }}
+        title={editingVersion ? 'Edit JDK Version' : 'Create New JDK Version'}
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowCreateModal(false);
+                resetForm();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" form="jdk-form">
+              {editingVersion ? 'Update' : 'Create'}
+            </Button>
+          </>
+        }
+      >
+        <form id="jdk-form" onSubmit={handleSubmit}>
+          <div className={styles.form}>
+            <Input
+              id="major_version"
+              label="Major Version"
+              type="text"
+              value={formData.major_version}
+              onChange={(e) => setFormData({ ...formData, major_version: e.target.value })}
+              required
+              disabled={!!editingVersion}
+              fullWidth
+              placeholder="8, 11, 17, 18, 19, 21, 22"
+            />
+
+            <Input
+              id="vendor"
+              label="Vendor"
+              type="text"
+              value={formData.vendor}
+              onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
+              required
+              fullWidth
+              placeholder="e.g., Oracle, Zulu, Amazon"
+            />
+
+            <Select
+              id="compliance_status"
+              label="Compliance Status"
+              value={formData.compliance_status}
+              onChange={(e) =>
+                setFormData({ ...formData, compliance_status: e.target.value as any })
+              }
+              options={COMPLIANCE_STATUS_OPTIONS}
+              required
+              fullWidth
+            />
+
+            <div className={styles.checkboxGroup}>
               <label>
                 <input
                   type="checkbox"
                   checked={formData.is_active}
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                 />
-                Active
+                <span>Active</span>
               </label>
             </div>
-            <div className={styles.formActions}>
-              <Button type="submit">Create JDK Version</Button>
-            </div>
-          </form>
-        </Card>
-      )}
+          </div>
+        </form>
+      </Modal>
 
-      <div className={styles.list}>
+      <div className={styles.table}>
         {versions.length === 0 ? (
           <Card className={styles.empty}>
             <p>No JDK versions found. Create your first JDK version to get started.</p>
           </Card>
         ) : (
-          versions.map((version) => (
-            <Card key={version.id} className={styles.versionCard}>
-              <div className={styles.versionHeader}>
-                <h3>JDK {version.major_version}</h3>
-                <div className={styles.badges}>
-                  <Badge
-                    variant={
-                      version.compliance_status === 'Compliant' || version.compliance_status === 'CompliantStar'
-                        ? 'success'
-                        : 'error'
-                    }
-                  >
-                    {version.compliance_status}
-                  </Badge>
-                  {version.is_active && <Badge variant="info">Active</Badge>}
-                </div>
-              </div>
-              <div className={styles.versionDetails}>
-                <div><strong>Vendor:</strong> {version.vendor}</div>
-                <div className={styles.versionMeta}>
-                  <span>Created: {new Date(version.created_at).toLocaleDateString()}</span>
-                </div>
-              </div>
-            </Card>
-          ))
+          <table className={styles.tableElement}>
+            <thead>
+              <tr>
+                <th>Major Version</th>
+                <th>Vendor</th>
+                <th>Compliance Status</th>
+                <th>Active</th>
+                {isAdmin && <th>Actions</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {versions.map((version) => (
+                <tr key={version.id}>
+                  <td>{version.major_version}</td>
+                  <td>{version.vendor}</td>
+                  <td>
+                    <Badge variant={getComplianceBadgeVariant(version.compliance_status)}>
+                      {version.compliance_status}
+                    </Badge>
+                  </td>
+                  <td>
+                    <Badge variant={version.is_active ? 'success' : 'neutral'}>
+                      {version.is_active ? 'Yes' : 'No'}
+                    </Badge>
+                  </td>
+                  {isAdmin && (
+                    <td>
+                      <div className={styles.actions}>
+                        <Button size="sm" variant="secondary" onClick={() => handleEdit(version)}>
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleToggleActive(version)}
+                        >
+                          {version.is_active ? 'Deactivate' : 'Activate'}
+                        </Button>
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </div>
   );
 };
-

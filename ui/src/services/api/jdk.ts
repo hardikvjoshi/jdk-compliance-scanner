@@ -44,7 +44,9 @@ export const jdkApi = {
   },
 
   updateComplianceStatus: async (id: number, compliance_status: string): Promise<JDKVersion> => {
-    const response = await apiClient.put<JDKVersion>(`/api/jdk-versions/${id}/compliance-status?compliance_status=${compliance_status}`);
+    const response = await apiClient.put<JDKVersion>(
+      `/api/jdk-versions/${id}/compliance-status?compliance_status=${encodeURIComponent(compliance_status)}`
+    );
     return response.data;
   },
 };

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Dataflow Diagrams - JDK Compliance Scanner</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+        .mermaid {
+            background: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        .notes {
+            background: #f9f9f9;
+            padding: 20px;
+            border-left: 4px solid #2196F3;
+            margin: 20px 0;
+        }
+        .notes h3 {
+            margin-top: 0;
+            color: #1976D2;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Backend Dataflow Diagram</h1>
+        <p>This document illustrates the dataflow through the JDK Compliance Scanner backend system.</p>
+
+        <h2>High-Level Dataflow</h2>
+        <div class="mermaid">
+flowchart TD
+    Client[Client/API Consumer] -->|HTTP Request| API[FastAPI Application]
+    API -->|Requires Auth| AuthMiddleware[Authentication Middleware]
+    AuthMiddleware -->|JWT Token| ValidateToken[Validate JWT Token]
+    ValidateToken -->|Valid User| RouteHandler[Route Handler]
+    ValidateToken -->|Invalid| ErrorResponse[401 Unauthorized]
+    
+    RouteHandler -->|CRUD Operations| DBSession[Database Session]
+    RouteHandler -->|Scan Operations| ScannerFactory[Scanner Factory]
+    RouteHandler -->|Encryption| EncryptionMgr[Encryption Manager]
+    
+    DBSession -->|Query/Insert/Update| SQLiteDB[(SQLite Database)]
+    SQLiteDB -->|Results| DBSession
+    DBSession -->|Data| RouteHandler
+    
+    ScannerFactory -->|Create Scanner| Scanner[Scanner Instance]
+    Scanner -->|Connect| TargetSystem[Target System<br/>OpenShift/Unix/Cloud]
+    TargetSystem -->|Execute Commands| Scanner
+    Scanner -->|JDK Version Output| JDKDetector[JDK Detector]
+    JDKDetector -->|Parsed Version| ComplianceChecker[Compliance Checker]
+    ComplianceChecker -->|Check Against DB| SQLiteDB
+    ComplianceChecker -->|Result| Scanner
+    Scanner -->|Scan Result| RouteHandler
+    
+    EncryptionMgr -->|Encrypt| SensitiveData[Sensitive Data]
+    EncryptionMgr -->|Decrypt| SensitiveData
+    
+    RouteHandler -->|Response Data| API
+    API -->|JSON Response| Client
+    
+    ErrorResponse -->|Error JSON| Client
+        </div>
+
+        <h2>Authentication Flow</h2>
+        <div class="mermaid">
+sequenceDiagram
+    participant Client
+    participant FastAPI
+    participant AuthMiddleware
+    participant Authenticator
+    participant Database
+    participant RouteHandler
+    
+    Client->>FastAPI: POST /api/auth/login<br/>{username, password}
+    FastAPI->>Authenticator: authenticate_user()
+    Authenticator->>Database: Query User by username
+    Database-->>Authenticator: User record
+    Authenticator->>Authenticator: Verify password hash
+    Authenticator->>Authenticator: create_access_token()
+    Authenticator-->>FastAPI: JWT Token
+    FastAPI-->>Client: {access_token, user}
+    
+    Client->>FastAPI: GET /api/projects<br/>Authorization: Bearer token
+    FastAPI->>AuthMiddleware: get_current_user()
+    AuthMiddleware->>Authenticator: decode_access_token()
+    Authenticator-->>AuthMiddleware: Token payload
+    AuthMiddleware->>Database: Query User by username
+    Database-->>AuthMiddleware: User record
+    AuthMiddleware->>AuthMiddleware: Check user.is_active
+    AuthMiddleware-->>FastAPI: Current User
+    FastAPI->>RouteHandler: Execute endpoint
+    RouteHandler->>Database: Query Projects
+    Database-->>RouteHandler: Project records
+    RouteHandler-->>FastAPI: JSON Response
+    FastAPI-->>Client: {projects: [...]}
+        </div>
+
+        <h2>API Request Flow (CRUD Operations)</h2>
+        <div class="mermaid">
+flowchart LR
+    subgraph ClientLayer[Client Layer]
+        HTTPReq[HTTP Request]
+        HTTPResp[HTTP Response]
+    end
+    
+    subgraph APILayer[API Layer]
+        FastAPIApp[FastAPI App]
+        Router[Router]
+        RouteHandler[Route Handler]
+    end
+    
+    subgraph AuthLayer[Authentication Layer]
+        AuthMW[Auth Middleware]
+        JWTValidate[JWT Validation]
+        RoleCheck[Role Check]
+    end
+    
+    subgraph BusinessLayer[Business Layer]
+        ServiceLogic[Service Logic]
+        Validation[Input Validation]
+        Encryption[Encryption Manager]
+    end
+    
+    subgraph DataLayer[Data Layer]
+        DBSession[DB Session]
+        Models[SQLAlchemy Models]
+        SQLite[(SQLite DB)]
+    end
+    
+    HTTPReq --> FastAPIApp
+    FastAPIApp --> Router
+    Router --> AuthMW
+    AuthMW --> JWTValidate
+    JWTValidate --> RoleCheck
+    RoleCheck --> RouteHandler
+    RouteHandler --> Validation
+    Validation --> Encryption
+    Encryption --> ServiceLogic
+    ServiceLogic --> DBSession
+    DBSession --> Models
+    Models --> SQLite
+    SQLite --> Models
+    Models --> DBSession
+    DBSession --> ServiceLogic
+    ServiceLogic --> RouteHandler
+    RouteHandler --> Router
+    Router --> FastAPIApp
+    FastAPIApp --> HTTPResp
+        </div>
+
+        <h2>Scanning Flow</h2>
+        <div class="mermaid">
+sequenceDiagram
+    participant API
+    participant ScanHandler
+    participant ScannerFactory
+    participant Scanner
+    participant TargetSystem
+    participant JDKDetector
+    participant ComplianceChecker
+    participant Database
+    
+    API->>ScanHandler: POST /api/scans<br/>{targets, config}
+    ScanHandler->>Database: Create ScanJob
+    Database-->>ScanHandler: ScanJob ID
+    
+    loop For each target
+        ScanHandler->>ScannerFactory: create_scanner(type, config)
+        ScannerFactory-->>ScanHandler: Scanner Instance
+        ScanHandler->>Scanner: scan(target)
+        Scanner->>Scanner: connect()
+        Scanner->>TargetSystem: SSH/API Connection
+        TargetSystem-->>Scanner: Connection Established
+        Scanner->>TargetSystem: execute_command("java -version")
+        TargetSystem-->>Scanner: Command Output
+        Scanner->>JDKDetector: parse_version_output()
+        JDKDetector-->>Scanner: {version, vendor}
+        Scanner->>ComplianceChecker: check_compliance(version, vendor)
+        ComplianceChecker->>Database: Query JDK Versions
+        Database-->>ComplianceChecker: JDK Version Records
+        ComplianceChecker->>ComplianceChecker: Match & Check Status
+        ComplianceChecker-->>Scanner: Compliance Status
+        Scanner->>Scanner: disconnect()
+        Scanner-->>ScanHandler: ScanResult
+        ScanHandler->>Database: Save ScanResult
+    end
+    
+    ScanHandler->>Database: Update ScanJob Status
+    ScanHandler-->>API: Scan Results
+    API-->>Client: {scan_job_id, results}
+        </div>
+
+        <h2>Database Operations Flow</h2>
+        <div class="mermaid">
+flowchart TD
+    Request[API Request] -->|Data| RouteHandler[Route Handler]
+    
+    RouteHandler -->|Create| CreateOp[Create Operation]
+    RouteHandler -->|Read| ReadOp[Read Operation]
+    RouteHandler -->|Update| UpdateOp[Update Operation]
+    RouteHandler -->|Delete| DeleteOp[Delete Operation]
+    
+    CreateOp -->|Encrypt| EncryptSensitive[Encrypt Sensitive Fields]
+    EncryptSensitive -->|Insert| DBInsert[(Database Insert)]
+    
+    ReadOp -->|Query| DBQuery[(Database Query)]
+    DBQuery -->|Decrypt| DecryptSensitive[Decrypt Sensitive Fields]
+    DecryptSensitive -->|Return| RouteHandler
+    
+    UpdateOp -->|Encrypt| EncryptSensitive
+    EncryptSensitive -->|Update| DBUpdate[(Database Update)]
+    
+    DeleteOp -->|Delete| DBDelete[(Database Delete)]
+    
+    DBInsert --> SQLite[(SQLite Database)]
+    DBQuery --> SQLite
+    DBUpdate --> SQLite
+    DBDelete --> SQLite
+    
+    SQLite -->|Results| RouteHandler
+    RouteHandler -->|Response| Response[HTTP Response]
+        </div>
+
+        <h2>Scanner Architecture Flow</h2>
+        <div class="mermaid">
+graph TB
+    subgraph Factory[Scanner Factory]
+        FactoryCreate[create_scanner]
+        Registry[Scanner Registry]
+    end
+    
+    subgraph Scanners[Scanner Implementations]
+        OpenShift[OpenShiftScanner]
+        Unix[UnixScanner]
+        AWS[AWSScanner]
+        Azure[AzureScanner]
+        GCP[GCPScanner]
+        Cloud[CloudScanner]
+    end
+    
+    subgraph Base[Base Scanner]
+        BaseClass[BaseScanner]
+        Connect[connect]
+        Execute[execute_command]
+        Scan[scan]
+        Disconnect[disconnect]
+    end
+    
+    subgraph Shared[Shared Components]
+        JDKDetector[JDK Detector]
+        ComplianceChecker[Compliance Checker]
+        ErrorHandler[Error Handler]
+        ParallelExecutor[Parallel Executor]
+    end
+    
+    subgraph Targets[Target Systems]
+        OpenShiftCluster[OpenShift Cluster]
+        UnixHost[Unix/Linux Host]
+        AWSInstance[AWS EC2]
+        AzureVM[Azure VM]
+        GCPVM[GCP Compute]
+    end
+    
+    FactoryCreate --> Registry
+    Registry -->|Creates| OpenShift
+    Registry -->|Creates| Unix
+    Registry -->|Creates| AWS
+    Registry -->|Creates| Azure
+    Registry -->|Creates| GCP
+    Registry -->|Creates| Cloud
+    
+    OpenShift --> BaseClass
+    Unix --> BaseClass
+    AWS --> BaseClass
+    Azure --> BaseClass
+    GCP --> BaseClass
+    Cloud -->|Routes to| AWS
+    Cloud -->|Routes to| Azure
+    Cloud -->|Routes to| GCP
+    
+    BaseClass --> Connect
+    BaseClass --> Execute
+    BaseClass --> Scan
+    BaseClass --> Disconnect
+    
+    Scan --> JDKDetector
+    JDKDetector --> ComplianceChecker
+    ComplianceChecker --> Scan
+    BaseClass --> ErrorHandler
+    
+    ParallelExecutor -->|Uses| BaseClass
+    
+    Connect --> OpenShiftCluster
+    Connect --> UnixHost
+    Connect --> AWSInstance
+    Connect --> AzureVM
+    Connect --> GCPVM
+    
+    Execute --> OpenShiftCluster
+    Execute --> UnixHost
+    Execute --> AWSInstance
+    Execute --> AzureVM
+    Execute --> GCPVM
+        </div>
+
+        <h2>Component Interactions</h2>
+        <div class="mermaid">
+graph LR
+    subgraph External[External]
+        Client[Client Applications]
+        OpenShiftAPI[OpenShift API]
+        SSHHosts[SSH Hosts]
+        CloudAPIs[Cloud Provider APIs]
+    end
+    
+    subgraph API[API Layer]
+        FastAPI[FastAPI]
+        Routes[Routes]
+        Middleware[Middleware]
+    end
+    
+    subgraph Core[Core Services]
+        Auth[Authentication]
+        Scanner[Scanners]
+        Compliance[Compliance]
+        DB[Database]
+        Encryption[Encryption]
+    end
+    
+    Client -->|HTTP| FastAPI
+    FastAPI --> Middleware
+    Middleware --> Auth
+    Auth --> DB
+    Middleware --> Routes
+    Routes --> Scanner
+    Routes --> Compliance
+    Routes --> DB
+    Routes --> Encryption
+    DB --> Encryption
+    Scanner --> OpenShiftAPI
+    Scanner --> SSHHosts
+    Scanner --> CloudAPIs
+    Scanner --> Compliance
+    Compliance --> DB
+    FastAPI -->|JSON| Client
+        </div>
+
+        <h2>Data Encryption Flow</h2>
+        <div class="mermaid">
+flowchart TD
+    InputData[Sensitive Data<br/>Credentials/Tokens] --> EncryptionMgr[Encryption Manager]
+    EncryptionMgr -->|Encrypt| EncryptedData[Encrypted String]
+    EncryptedData -->|Store| Database[(Database)]
+    
+    Database -->|Retrieve| EncryptedData
+    EncryptedData --> EncryptionMgr
+    EncryptionMgr -->|Decrypt| OutputData[Decrypted Data]
+    OutputData -->|Use| ScannerOrAPI[Scanner/API]
+    
+    EncryptionMgr -->|Uses| EncryptionKey[Encryption Key<br/>from ENV/config]
+    EncryptionMgr -->|Uses| CryptographyLib[Cryptography Library]
+        </div>
+
+        <div class="notes">
+            <h3>Key Components</h3>
+            <ul>
+                <li><strong>FastAPI Application</strong>: Entry point for all HTTP requests</li>
+                <li><strong>Authentication Middleware</strong>: Validates JWT tokens and enforces role-based access</li>
+                <li><strong>Route Handlers</strong>: Process specific API endpoints (clusters, projects, targets, etc.)</li>
+                <li><strong>Database Layer</strong>: SQLAlchemy ORM with SQLite database</li>
+                <li><strong>Encryption Manager</strong>: Handles encryption/decryption of sensitive data</li>
+                <li><strong>Scanner Factory</strong>: Creates appropriate scanner instances based on deployment type</li>
+                <li><strong>Scanners</strong>: Connect to target systems and execute JDK version detection</li>
+                <li><strong>JDK Detector</strong>: Parses <code>java -version</code> output to extract version and vendor</li>
+                <li><strong>Compliance Checker</strong>: Validates JDK versions against database compliance rules</li>
+            </ul>
+
+            <h3>Data Flow Patterns</h3>
+            <ul>
+                <li><strong>Request Flow</strong>: Client → FastAPI → Auth → Route Handler → Database/Scanner → Response</li>
+                <li><strong>Authentication</strong>: Token validation happens before route handlers execute</li>
+                <li><strong>Encryption</strong>: Sensitive data encrypted before storage, decrypted when retrieved</li>
+                <li><strong>Scanning</strong>: Factory creates scanner → Scanner connects → Executes commands → Parses output → Checks compliance → Returns results</li>
+                <li><strong>Error Handling</strong>: Centralized error handler logs errors at each layer</li>
+            </ul>
+
+            <h3>Security Considerations</h3>
+            <ul>
+                <li>All credentials stored encrypted in database</li>
+                <li>JWT tokens validated on every authenticated request</li>
+                <li>Role-based access control enforced by middleware</li>
+                <li>Sensitive fields decrypted only when needed for operations</li>
+                <li>Connection credentials encrypted before storage</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            sequence: {
+                diagramMarginX: 50,
+                diagramMarginY: 10,
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35,
+                mirrorActors: true,
+                bottomMarginAdj: 1,
+                useMaxWidth: true,
+                rightAngles: false,
+                showSequenceNumbers: false
+            }
+        });
+    </script>
+</body>
+</html>
+

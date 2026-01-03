@@ -1,79 +1,121 @@
 .jdkVersions {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-6);
+  gap: var(--spacing-4);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-4);
 }
 
 .header h2 {
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-1) 0;
+}
+
+.subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
-.loading,
-.error {
-  padding: var(--spacing-4);
+.loading {
+  padding: var(--spacing-8);
   text-align: center;
-  border-radius: var(--border-radius);
+  color: var(--color-text-secondary);
 }
 
 .error {
+  padding: var(--spacing-3) var(--spacing-4);
   background-color: #fee2e2;
-  color: var(--color-error);
-}
-
-.formCard {
-  padding: var(--spacing-6);
-}
-
-.formCard h3 {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  margin: 0 0 var(--spacing-4) 0;
-}
-
-.formGroup {
-  margin-bottom: var(--spacing-4);
-}
-
-.formGroup label {
-  display: block;
-  margin-bottom: var(--spacing-2);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-}
-
-.formGroup input,
-.formGroup select {
-  width: 100%;
-  padding: var(--spacing-3);
-  border: var(--border-width) solid var(--color-border);
+  border: var(--border-width) solid var(--color-error);
   border-radius: var(--border-radius);
-  font-size: var(--font-size-base);
-}
-
-.formGroup input[type="checkbox"] {
-  width: auto;
-  margin-right: var(--spacing-2);
-}
-
-.formActions {
+  color: var(--color-error);
   display: flex;
-  gap: var(--spacing-3);
-  margin-top: var(--spacing-6);
+  justify-content: space-between;
+  align-items: center;
 }
 
-.list {
+.errorClose {
+  background: none;
+  border: none;
+  color: var(--color-error);
+  font-size: var(--font-size-xl);
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
+}
+
+.checkboxGroup label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  cursor: pointer;
+}
+
+.checkboxGroup input[type="checkbox"] {
+  width: auto;
+  cursor: pointer;
+}
+
+.table {
+  width: 100%;
+}
+
+.tableElement {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--color-bg-primary);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.tableElement thead {
+  background-color: var(--color-bg-secondary);
+}
+
+.tableElement th {
+  padding: var(--spacing-3) var(--spacing-4);
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.tableElement td {
+  padding: var(--spacing-3) var(--spacing-4);
+  border-bottom: var(--border-width) solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.tableElement tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tableElement tbody tr:hover {
+  background-color: var(--color-bg-secondary);
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-2);
 }
 
 .empty {
@@ -81,39 +123,3 @@
   text-align: center;
   color: var(--color-text-secondary);
 }
-
-.versionCard {
-  padding: var(--spacing-5);
-}
-
-.versionHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-4);
-}
-
-.versionHeader h3 {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  margin: 0;
-}
-
-.badges {
-  display: flex;
-  gap: var(--spacing-2);
-}
-
-.versionDetails {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
-  color: var(--color-text-secondary);
-}
-
-.versionMeta {
-  margin-top: var(--spacing-2);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-tertiary);
-}
-
